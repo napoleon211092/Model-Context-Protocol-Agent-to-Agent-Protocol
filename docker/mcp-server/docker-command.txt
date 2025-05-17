@@ -1,0 +1,2 @@
+docker build -t server-gemini-docker .
+docker run -d -v /root/Model-Context-Protocol-Agent-to-Agent-Protocol/docker/mcp-server/workspace:/root/workspace server-gemini-docker:latest
