@@ -1,0 +1,27 @@
+{
+  "mcpServers": {
+    "terminal_server_docker": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "--init",
+        "-e",
+        "DOCKER_CONTAINER=true",
+        "-v",
+        "/root/Model-Context-Protocol-Agent-to-Agent-Protocol/docker/mcp-server/workspace:/root/workspace",
+        "server-gemini-docker:latest"
+      ]
+    },
+    "fetch": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "mcp_fetch_server_test:latest"
+      ]
+    }
+  }
+}

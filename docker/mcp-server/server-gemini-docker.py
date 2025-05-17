@@ -29,5 +29,5 @@ async def run_command_gemini(command: str) -> str:
 if __name__ == "__main__":
     print("Running")
     mcp.run(transport='stdio')
-    while True:
-        time.sleep(60)
+    # while True:
+    #     time.sleep(60)

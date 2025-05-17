@@ -1,1 +1,2 @@
 (mcp-client) root@lam-G550JK:~/Model-Context-Protocol-Agent-to-Agent-Protocol/docker/mcp-client# uv run client.py docker
+(mcp-client) root@lam-G550JK:~/Model-Context-Protocol-Agent-to-Agent-Protocol/docker/mcp-client# uv run client-for-multi-docker.py
