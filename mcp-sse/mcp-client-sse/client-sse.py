@@ -12,6 +12,18 @@ tasks and, when needed, call external tools (in this case, MCP tools) to perform
 A stream manager (or stream context) in this code is responsible for managing the lifecycle of the SSE connection,
 ensuring that the connection is properly opened and closed. We use asynchronous context managers to handle these resources safely.
 """
+"""_
+| Bước                       | Gọi hàm/class gì?                         | Mục đích                                                |
+| -------------------------- | ----------------------------------------- | ------------------------------------------------------- |
+| Khởi tạo client            | `MCPClient()`                             | Khởi tạo Gemini, chuẩn bị session/context               |
+| Kết nối SSE tới MCP server | `await client.connect_to_sse_server(url)` | Mở stream, tạo session, lấy tool từ server              |
+| Vòng lặp chat user         | `await client.chat_loop()`                | Lặp nhận query, xử lý từng câu hỏi qua process\_query   |
+| Xử lý query                | `await client.process_query(query)`       | Gửi prompt cho Gemini, tự động gọi tool nếu LLM yêu cầu |
+| Cleanup tài nguyên         | `await client.cleanup()`                  | Đóng session, đóng stream, giải phóng kết nối network   |
+| Chuyển tool sang schema    | `convert_mcp_tools_to_gemini()`           | Đảm bảo tool server tương thích Gemini function-calling |
+| Dọn inputSchema tool       | `clean_schema()`                          | Bỏ title khỏi JSON schema                               |
+
+"""
 
 import asyncio            # For asynchronous programming
 import os                 # For accessing environment variables
