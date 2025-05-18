@@ -13,6 +13,42 @@ The server uses:
 - `FastMCP` from `mcp.server.fastmcp` to define the tools
 - `SseServerTransport` to handle long-lived SSE connections
 """
+"""
+Giải thích:
+
+- MCP Client/Agent sẽ giao tiếp qua HTTP SSE với server.
+
+- Uvicorn chạy Starlette (ASGI web framework).
+
+- Starlette định nghĩa các route, bao gồm /sse cho kết nối SSE.
+
+- FastMCP là framework để đăng ký các “tool” có thể gọi từ xa (bằng decorator @mcp.tool()).
+
+- SseServerTransport là lớp quản lý kết nối kiểu SSE (giữ kết nối mở, stream data về client).
+"""
+"""
+- Client (hoặc agent) connect vào route /sse (SSE).
+
+- Server mở stream và chuyển mọi message vào ra qua lớp SseServerTransport.
+
+- Khi client gọi tool (add_numbers, run_command), server thực hiện function và stream kết quả về client qua SSE.
+
+- Nếu client disconnect hoặc gửi "quit", hàm handle_sse kết thúc, trả về HTTP 204.
+"""
+"""
+- Starlette là web framework (giống như Flask, FastAPI…) dùng để định nghĩa ứng dụng (route, HTTP handler, middleware). Nó không trực tiếp lắng nghe kết nối từ Internet.
+- Uvicorn là ASGI server — một server thực thụ chịu trách nhiệm chạy app Starlette (giống như Gunicorn, uWSGI cho Flask/Django, nhưng dành cho ASGI).
+Chịu trách nhiệm lắng nghe kết nối từ client (trình duyệt, HTTP agent, curl…).
+
+- Cần cả hai:
+
+    + Starlette để tạo ứng dụng web, định nghĩa API endpoint, route, logic.
+
+    + Uvicorn để chạy ứng dụng đó trên một cổng mạng thực sự, tiếp nhận kết nối HTTP thực, quản lý socket và đa tiến trình.
+
+"""
+
+
 
 #   [ MCP Client / Agent in Browser ]
 #                  |
@@ -45,6 +81,12 @@ import uvicorn  # ASGI server to run the Starlette app
 # --------------------------------------------------------------------------------------
 # STEP 1: Initialize FastMCP instance — this acts as your "tool server"
 # --------------------------------------------------------------------------------------
+"""
+mcp = FastMCP("terminal"): Tạo một MCP server, gán tên terminal (phục vụ nhận diện).
+
+DEFAULT_WORKSPACE: Thư mục gốc để chạy các lệnh shell (giới hạn phạm vi tool shell để an toàn).
+"""
+
 mcp = FastMCP("terminal")  # Name of the server for identification purposes
 
 # Default directory where shell commands will run (used in run_command tool)
@@ -110,6 +152,16 @@ def create_starlette_app(mcp_server: Server, *, debug: bool = False) -> Starlett
     Returns:
         Starlette: The full Starlette app with routes.
     """
+    """
+    - create_starlette_app: Tạo một instance Starlette, mount các route HTTP.
+
+        + /sse: route này client sẽ gọi tới để mở kết nối SSE. Mỗi client connect sẽ được tạo 1 session.
+
+        + /messages/: dùng cho các client kiểu POST (ít dùng trong streaming, để hỗ trợ mở rộng).
+
+    - handle_sse: Khi client kết nối /sse, hàm này sẽ được gọi, thiết lập kết nối, khởi chạy agent MCP với stream vào/ra qua SSE.
+    """
+    
     # Create SSE transport handler to manage long-lived SSE connections
     sse = SseServerTransport("/messages/")
 
