@@ -39,7 +39,7 @@ from mcp.server.sse import SseServerTransport  # The SSE transport layer
 from starlette.applications import Starlette  # Web framework to define routes
 from starlette.routing import Route, Mount  # Routing for HTTP and message endpoints
 from starlette.requests import Request  # HTTP request objects
-
+from starlette.responses import Response
 import uvicorn  # ASGI server to run the Starlette app
 
 # --------------------------------------------------------------------------------------
@@ -114,21 +114,38 @@ def create_starlette_app(mcp_server: Server, *, debug: bool = False) -> Starlett
     sse = SseServerTransport("/messages/")
 
     # This function is triggered when a client connects to `/sse`
-    async def handle_sse(request: Request) -> None:
-        """
-        Handles a new SSE client connection and links it to the MCP server.
-        """
-        # Open an SSE connection, then hand off read/write streams to MCP
-        async with sse.connect_sse(
-            request.scope,
-            request.receive,
-            request._send,  # Low-level send function provided by Starlette
-        ) as (read_stream, write_stream):
-            await mcp_server.run(
-                read_stream,
-                write_stream,
-                mcp_server.create_initialization_options(),
-            )
+    # async def handle_sse(request: Request) -> None:
+    #     """
+    #     Handles a new SSE client connection and links it to the MCP server.
+    #     """
+    #     # Open an SSE connection, then hand off read/write streams to MCP
+    #     async with sse.connect_sse(
+    #         request.scope,
+    #         request.receive,
+    #         request._send,  # Low-level send function provided by Starlette
+    #     ) as (read_stream, write_stream):
+    #         await mcp_server.run(
+    #             read_stream,
+    #             write_stream,
+    #             mcp_server.create_initialization_options(),
+    #         )
+    async def handle_sse(request: Request):
+        try:
+            async with sse.connect_sse(
+                request.scope,
+                request.receive,
+                request._send,
+            ) as (read_stream, write_stream):
+                await mcp_server.run(
+                    read_stream,
+                    write_stream,
+                    mcp_server.create_initialization_options(),
+                )
+        except Exception as e:
+            print(f"[SSE] Connection closed or error: {e}")
+        # Sau khi kết thúc/quit, trả về Response hợp lệ cho Starlette
+        return Response(status_code=204)  # <-- ĐÃ THÊM DÒNG NÀY
+
 
     # Return the Starlette app with configured endpoints
     return Starlette(
